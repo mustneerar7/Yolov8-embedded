@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
 
@@ -33,7 +34,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
 
   // Configure styles.
   private fun initPaints() {
-    textBackgroundPaint.color = Color.BLACK
+    textBackgroundPaint.color = Color.RED
     textBackgroundPaint.style = Paint.Style.FILL
     textBackgroundPaint.textSize = 50f
 
@@ -41,7 +42,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
     textPaint.style = Paint.Style.FILL
     textPaint.textSize = 50f
 
-    boxPaint.color = ContextCompat.getColor(context!!, R.color.black)
+    boxPaint.color = ContextCompat.getColor(context!!, R.color.red)
     boxPaint.strokeWidth = 8F
     boxPaint.style = Paint.Style.STROKE
   }
@@ -57,6 +58,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
       val bottom = it.y2 * height
 
       canvas.drawRect(left, top, right, bottom, boxPaint)
+
       val drawableText = it.clsName
 
       textBackgroundPaint.getTextBounds(drawableText, 0, drawableText.length, bounds)

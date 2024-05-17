@@ -3,6 +3,7 @@ package com.mustneerar7.yolov8embed
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.SystemClock
+import android.util.Log
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.common.FileUtil
@@ -109,6 +110,7 @@ class Detector(
   private fun bestBox(array: FloatArray): List<BoundingBox>? {
 
     val boundingBoxes = mutableListOf<BoundingBox>()
+
     for (c in 0 until numElements) {
       val confidences = (4 until numChannel).map { array[c + numElements * it] }
       val cnf = confidences.max()
@@ -170,6 +172,9 @@ class Detector(
         }
       }
     }
+
+    Log.d("Detector", "Selected boxes: ${selectedBoxes.toString()}")
+
     return selectedBoxes
   }
 
@@ -189,6 +194,33 @@ class Detector(
   interface DetectorListener {
     fun onEmptyDetect()
     fun onDetect(boundingBoxes: List<BoundingBox>, inferenceTime: Long)
+  }
+
+  // Run inference on a single input frame.
+  fun detectSingleFrame(frame: Bitmap) {
+    interpreter ?: return
+    if (tensorWidth == 0 || tensorHeight == 0 || numChannel == 0 || numElements == 0) return
+
+    var inferenceTime = SystemClock.uptimeMillis()
+
+    val resizedBitmap = Bitmap.createScaledBitmap(frame, tensorWidth, tensorHeight, false)
+
+    val tensorImage = TensorImage(DataType.FLOAT32)
+    tensorImage.load(resizedBitmap)
+    val processedImage = imageProcessor.process(tensorImage)
+    val imageBuffer = processedImage.buffer
+
+    val output = TensorBuffer.createFixedSize(intArrayOf(1, numChannel, numElements), OUTPUT_IMAGE_TYPE)
+    interpreter?.run(imageBuffer, output.buffer)
+
+    val bestBoxes = bestBox(output.floatArray)
+    if (bestBoxes == null) {
+      detectorListener.onEmptyDetect()
+      return
+    }
+
+    inferenceTime = SystemClock.uptimeMillis() - inferenceTime
+    detectorListener.onDetect(bestBoxes, inferenceTime)
   }
 
   // Static constants.
